@@ -1,8 +1,5 @@
-
-
-#myreg <- function(V, kx = 3, ky = 3){
-  kp <- 3
-  V <- 1/V1.kvad
+pol.reg <- function(V, kp = 3){
+  V <- 1/V
   k <- dim(V)[1]
   n <- dim(V)[2]
   #Y <- (-(k/2):((k/2)-1)+0.5)
@@ -16,4 +13,4 @@
   model <- lm(Z ~ pol, x = T) 
   #fit.val <- 
   #plot3d(X,Y,Z)
-#}
+}
