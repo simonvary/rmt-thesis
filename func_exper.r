@@ -1,4 +1,4 @@
-goe.stan <- function(n, k, q){
+goe.stan <- function(n, k, q, norm = T){
 	# Generate matrices
 	g1 <- generate.GUE(n = n*q, compl = F, norm = T)
 	p  <- generate.Q.stan(n = n*q, k = k*q, random = T)
@@ -7,12 +7,14 @@ goe.stan <- function(n, k, q){
 	# Spectral decomposition
 	eig1 <- eigen(x = g1, symmetric = T)
 	eig2 <- eigen(x = g2, symmetric = T)
-	vec1 <- h(p) %*% eig1$vector
-	vec1 <- normalize(vec1)
+	vec1 <- t(p) %*% eig1$vector
+	if (norm){
+		vec1 <- normalize(vec1)	
+	}
 	vec2 <- eig2$vectors
 	
 	# Extract info
-	pV <- h(vec2) %*% vec1
+	pV <- h(vec1) %*% vec2
 	pPPT <- p %*% h(p)
 	p.diag.max <- diag.max(abs(pV))
 	return(list(V = pV, 
@@ -76,7 +78,9 @@ run.q.span <- function(N, n, k, q0, dq, q1, exper){
 			mean.PPT2s = mean.PPT2s, 
 			mean.eigs1 = mean.eigs1, 
 			mean.eigs2 = mean.eigs2, 
-			mean.diags = mean.diags))
+			mean.diags = mean.diags,
+			ks = k*qs,
+			ns = n*qs))
 }
 
 run.k.span <- function(N, n, k0, dk, k1, exper){
@@ -133,5 +137,7 @@ run.k.span <- function(N, n, k0, dk, k1, exper){
 			mean.PPT2s = mean.PPT2s, 
 			mean.eigs1 = mean.eigs1, 
 			mean.eigs2 = mean.eigs2, 
-			mean.diags = mean.diags))
+			mean.diags = mean.diags,
+			ks = ks,
+			n = n))
 }
