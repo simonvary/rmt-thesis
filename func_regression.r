@@ -19,7 +19,7 @@ nlm.reg <- function(X,Y,Z,kp){
 	
 	np <- dim(pol)[2]	# number of moments in pol
 	f0 <- function(a){
-		return( sum( (Z - pol%*%as.vector(a[1:np]) + 1/(a[np+1]*X^2-a[np+2]*Y^2)
+		return( sum( (Z - pol%*%as.vector(a[1:np]) - abs(1/(a[np+1]*X^2-a[np+2]*Y^2))
 			   )^2 ) )
 	}
 	
@@ -30,7 +30,7 @@ nlm.reg <- function(X,Y,Z,kp){
 			#	1/(a[np1+1]*pX^2-a[np1+2]*pY^2))
 		)
 	}
-	v <- nlm(f = f0, p = c(coeff,1,1), steptol = 1e-8)
+	v <- nlm(f = f0, p = c(coeff,1e3,1e3), steptol = 1e-8)
 	pfitted.Z <- f1(X, Y, v$estimate)
 	return(list(solution = v, fitted.Z = pfitted.Z))
 }

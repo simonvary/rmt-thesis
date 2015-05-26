@@ -46,6 +46,16 @@ sample.semicircle <- function(nsamples = 1, eig = F){
 	}
 }
 
+fun.semicircle <- function(x){
+	return((2/pi)*sqrt(1-x^2))
+}
+
+fun.marcenko.pastur <- function(x,q){
+	a = (1-sqrt(q))^2
+	b = (1+sqrt(q))^2
+	return(1/(2*pi*x*q)*sqrt((b-x)*(x-a)) )
+}
+
 generate.bernoulli <- function(n = 1000, norm = T){
 	M <- matrix(numeric(n^2), ncol = n, nrow = n)
 	M[upper.tri(M)] <- sample(c(-1,1), (n*(n-1))/2, replace = T)
@@ -83,9 +93,9 @@ generate.iid <- function(n = 100, norm = T){
 	return(M)
 }
 
-generate.wishart <- function(n = 100, k = 150){
-	X <- matrix(data = rnorm(n*k), ncol = k, nrow = n)
-	return(X %*% t(X))
+generate.wishart <- function(n = 100, m = 150){
+	X <- matrix(data = rnorm(n*m), ncol = m, nrow = n)
+	return((1/m)*X %*% t(X))
 }
 
 generate.Q.haar <- function(n, k, random = T){
@@ -134,5 +144,10 @@ create.sum.matrix <- function(n,k,q){
 	pL <- c(rep(c(rep(1/q,q), rep(0,q*k)), k-1), rep(1/q,q) )
 	pL <- t(matrix(data = pL,nrow = q*k, ncol = k, byrow = F))
 	return(list(L = pL, R = pR))
+}
+
+round.max <- function(q, q.max){
+	# round q with upper bound q.max
+	return(min(round(q), q.max))
 }
 

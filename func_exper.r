@@ -1,4 +1,4 @@
-goe.stan <- function(n, k, q, norm = T){
+goe.stan <- function(n, k, q, norm = F){
 	# Generate matrices
 	g1 <- generate.GUE(n = n*q, compl = F, norm = T)
 	p  <- generate.Q.stan(n = n*q, k = k*q, random = T)
@@ -23,6 +23,39 @@ goe.stan <- function(n, k, q, norm = T){
 		    eig.val2 = eig2$values , 
 		    diag = p.diag.max))
 }
+
+run.detail <- function(N, n, k, exper){
+	V <- vector("list", N)
+	eig.val1 <- vector("list", N)
+	eig.val2 <- vector("list", N)
+	diag <- vector("list", N)
+	PPT <- vector("list", N)
+	for (i in 1:N){
+		print(paste(i,'/',N))
+		tmp <- exper(n, k, 1)
+		V[[i]] <- tmp$V
+		PPT[[i]] <- tmp$PPT
+		eig.val1[[i]] <- tmp$eig.val1
+		eig.val2[[i]] <- tmp$eig.val2
+		diag[[i]] <- tmp$diag
+	}
+	
+	V <- abind(V,along = 3)
+	PPT <- abind(PPT,along = 3)
+	eig.val1 <- abind(eig.val1, along = 2)
+	eig.val2 <- abind(eig.val2, along = 2)
+	diag <- abind(diag, along = 2)
+	
+	return(list(    V =  V, 
+			PPT = PPT, 
+			eig.val1 = eig.val1, 
+			eig.val2 = eig.val2, 
+			diag = diag,
+			k = k,
+			n = n))
+}
+	
+	
 
 run.q.span <- function(N, n, k, q0, dq, q1, exper){
 	qs <- seq(q0, q1, dq)
@@ -140,4 +173,28 @@ run.k.span <- function(N, n, k0, dk, k1, exper){
 			mean.diags = mean.diags,
 			ks = ks,
 			n = n))
+}
+
+# jednorazovky:
+
+run.XXT <- function(N, n){
+	GUE <- vector("list", N)
+	Q.HAAR <- vector("list", N)
+	WISH <- vector("list", N)
+	
+	for (i in 1:N){
+		print(paste(i,'/',N))
+		tGUE <- generate.GUE(n = n,compl = F,norm = T)
+		tQ.HAAR <- generate.Q.haar(n = n, k = n)
+		tWISH <- generate.wishart(n = n, m = n)
+		GUE[[i]] <- tGUE %*% h(tGUE)
+		Q.HAAR[[i]] <- tQ.HAAR %*% tQ.HAAR
+		WISH[[i]] <- tWISH %*% h(tWISH)
+	}
+	GUE <- abind(GUE,along = 3)
+	Q.HAAR <- abind(Q.HAAR,along = 3)
+	WISH <- abind(WISH,along = 3)
+	return(list(GUE =  GUE,
+		    Q.HAAR = Q.HAAR,
+		    WISH = WISH))
 }
