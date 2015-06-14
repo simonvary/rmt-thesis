@@ -1,13 +1,13 @@
 require(pracma)
 require(abind)
-require(rgl)
 
 pnorm <- function(x, p = 2){
+	# p-norm of a vectors x
 	return( sum(x^p)^(1/p) )
 }
 
 normalize <- function(A, bycol = T, p = 2){
-	# Normalize columns/rows of A
+	# Normalize columns/rows of A, using p-norm
 	if (bycol){
 		return(apply(X = A, MARGIN = 2, FUN = function(x){
 			return(x/pnorm(x, p = p))
@@ -21,19 +21,19 @@ h <- function(x){
 	return(Conj(t(x)))
 }
 
-diag2 <- function(M){
-	return(diag(apply(M, MARGIN = 1,FUN = rev)))
-}
-
 diag.max <- function(M){
+	# Extract max. values in every column
 	return(apply(M, MARGIN = 2,FUN = max))
 }
 
 
 sample.semicircle <- function(nsamples = 1, eig = F){
+	# Sample from semicircle distribution
+	# 	eig == F -> n independent samples (without eig. repulsion)
+	#	eig == T -> n dependent random eigenvalues of random GUE matrix (with eig. repulsion)
 	if (eig == F){
 		# http://stats.stackexchange.com/questions/12843/generating-random-samples-from-a-custom-distribution
-		# sample random numbers from pdf: p(x) = (2/pi)*sqrt(1-x^2)
+		# sample independent random numbers from pdf: p(x) = (2/pi)*sqrt(1-x^2)
 		x <- runif(nsamples)
 		f <- function(x,u) (x*sqrt(1 - x^2) + asin(x) + pi/2 )/pi - u
 		my.uniroot <- function(x) uniroot(f, c(-1, 1), tol = 1e-4, u = x)$root;
@@ -46,26 +46,22 @@ sample.semicircle <- function(nsamples = 1, eig = F){
 	}
 }
 
-fun.semicircle <- function(x){
-	return((2/pi)*sqrt(1-x^2))
+fun.semicircle <- function(x, m=1){
+	# semicircle function with support [-m^2, m^2]
+	return((2/(pi*m^2))*sqrt(m^2-x^2))
 }
 
 fun.marcenko.pastur <- function(x,q){
+	# Marchenko-Pastur function with parameter q
 	a = (1-sqrt(q))^2
 	b = (1+sqrt(q))^2
 	return(1/(2*pi*x*q)*sqrt((b-x)*(x-a)) )
 }
 
-generate.bernoulli <- function(n = 1000, norm = T){
-	M <- matrix(numeric(n^2), ncol = n, nrow = n)
-	M[upper.tri(M)] <- sample(c(-1,1), (n*(n-1))/2, replace = T)
-	M[lower.tri(M)] <- M[upper.tri(M)]
-	diag(M) <- sample(c(-1,1), n, replace = T)
-	if (norm) M = M/sqrt(2*n)
-	return(M)
-}
-
 generate.GUE <- function(n = 1000, compl = F, norm = T){
+	# Generate GUE matrix:
+	# 	 compl == T/F -> GUE/GOE
+	#	 norm == T 	  -> spectrum with support [-1,1]
 	if (compl){
 		M <- matrix( data = complex(real = rnorm(n^2, sd = 0.5), imaginary = rnorm(n^2, sd = 0.5)),
 			     ncol = n,
@@ -75,37 +71,57 @@ generate.GUE <- function(n = 1000, compl = F, norm = T){
 		M <- matrix(data = rnorm(n^2), ncol = n, nrow = n)
 	}
 	M = .5*(M + h(M))
-	if (norm) M = M/sqrt(2*n)
+	if (norm) M = M/(sqrt(2*n))
 	return(M)
 }
 
 generate.GUE.diag <- function(n = 1000, compl = F, norm = T){
-	# naozaj potrebujem ?
+	# naozaj potrebujem ? asi vymazat
 	M <- diag(rnorm(n))
 	if (norm) M = M/sqrt(2*n)
 	return(M)
 }
 
+generate.wigner.unif <- function(n = 100, norm = T){
+	# Generate Wigner matrix with unifrom off-diagonal and Bernoulli diagonal
+	M <- matrix(data = runif(n^2, -sqrt(12)/2, sqrt(12)/2), ncol = n, nrow = n)
+	diag(M) <- sample(c(-30,30), size = n, replace = T)
+	M = .5*(M + h(M))
+	if (norm) M = M/sqrt(2*n)
+}
+
+generate.wigner.bernoulli <- function(n = 100, norm = T){
+	# Generate Wigner Bernoulli ensemble
+	# 	 norm == T -> spectrum with support [-1,1]
+	M <- matrix(data = sample(c(-1,1),size = n^2, replace = T), ncol = n, nrow = n)
+	M = .5*(M + h(M))
+	if (norm) M = M/sqrt(2*n)
+}
+
 generate.iid <- function(n = 100, norm = T){
 	# Generate random iid (n,n) matrix with Gaussian dist.
 	M <- matrix(data = rnorm(n^2), ncol = n, nrow = n)
-	if (norm) M = M/sqrt(2*n)
+	if (norm) M <- M/sqrt(2*n)
 	return(M)
 }
 
-generate.wishart <- function(n = 100, m = 150){
+generate.wishart <- function(n = 100, m = 150, norm = T){
+	# Generate (n,n) Wishart matrix with q = m/n
 	X <- matrix(data = rnorm(n*m), ncol = m, nrow = n)
-	return((1/m)*X %*% t(X))
+	M <- X %*% t(X)
+	if (norm) M <- M/m
+	return(M)
 }
 
 generate.Q.haar <- function(n, k, random = T){
-	# k - orthogonal vectors using Haar measure (R^n)
+	# Generate (n,k) matrix whose columns are orthogonal and Haar distributed
 	M <- generate.GUE(n = n,compl = F,norm = T)
 	return(eigen(M, symmetric = T, only.values = F)$vectors[,1:k])
 }
 
 generate.Q.stan <- function(n, k, random = T){
-	# generate k - standard orthogonal vectors
+	# Generate (n,k) matrix whose columns are orthogonal, standard basis vectors
+	# 	  random == T/F -> random basis vectors/ first k basis vectors
 	if (random){
 		P <- diag(rep(x = 1,n))[,sample(x = 1:n,size = k)]
 	}else{
@@ -115,13 +131,14 @@ generate.Q.stan <- function(n, k, random = T){
 }
 
 generate.P.haar <- function(n, k){
+	# Generate projection matrix on k orthogonal, Haar distributed vectors
 	Q <- generate.Q.haar(n = n, k = k)
 	P <- Q %*% h(Q)
 	return(P)
 }
 
 generate.P.stan <- function(n, k, random = T){
-	# generate projection on random standard subspace
+	# Generate projection matrix on random k orthogonal vectors from standard basis
 	Q <- generate.Q.stan(n = n, k = k, random = T)
 	P <- Q %*% h(Q)
 	return(P)
@@ -131,19 +148,7 @@ generate.even.spectrum <- function(n, a, b){
 	# generates matrix with evenly distributed spectrum in [a,b] and orthonormal eigvectors
 	eigs <- seq(from = a, to = b,length.out = n)
 	Q <- generate.Q.haar(n = n,k = 0)
-	#Q <- diag(rep(1,n))
 	return(h(Q) %*% diag(eigs) %*% Q)
-}
-
-create.sum.matrix <- function(n,k,q){
-	# generate pair (left/right) of helping matrices
-	# For matrix (q*k x q*n) V :
-	#       V2 := L %*% V %*% R
-	pR <- c(rep(c(rep(1/q,q), rep(0,q*n)), n-1), rep(1/q,q) )
-	pR <- matrix(data = pR,nrow = q*n, ncol = n, byrow = F)
-	pL <- c(rep(c(rep(1/q,q), rep(0,q*k)), k-1), rep(1/q,q) )
-	pL <- t(matrix(data = pL,nrow = q*k, ncol = k, byrow = F))
-	return(list(L = pL, R = pR))
 }
 
 round.max <- function(q, q.max){
