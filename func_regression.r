@@ -35,6 +35,26 @@ nlm.reg <- function(X,Y,Z,kp){
 	return(list(solution = v, fitted.Z = pfitted.Z))
 }
 
+nlm.reg2 <- function(X,Y,Z,tol){
+	f1 <- function(pX,pY,a, tol){
+		q = sqrt(0.7)
+		H <- rep(0,length(X))
+		oX<-pX[abs(q*pX-pY)>tol]
+		oY<-pY[abs(q*pX-pY)>tol]
+		H[abs(q*pX-pY)>tol] <- 1/(( a[1]*oX - oY )^2)
+		H[abs(q*pX-pY)<=tol] <- 0
+		return(H)
+	}
+	f0 <- function(a){
+		return( sum((Z - f1(X,Y,a,tol))^2) )
+		#return( sum(Z^2)/sum(f1(X,Y,a,tol)^2) )
+	}
+	
+	v <- nlm(f = f0, p = sqrt(1), steptol = 1e-6, iterlim = 1000)
+	pfitted.Z <- f1(X, Y, v$estimate, tol)
+	return(list(solution = v, fitted.Z = pfitted.Z))
+}
+
 pol.reg <- function(X,Y,Z, kp = 3){
 	pol <- polym(X,Y,degree = kp)
 	model <- lm(Z ~ pol, x = T) 

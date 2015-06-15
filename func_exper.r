@@ -24,7 +24,85 @@ goe.stan <- function(n, k, q, norm = F){
 		    diag = p.diag.max))
 }
 
-run.detail <- function(N, n, k, exper){
+wish.stan <- function(n, m, k, q, norm = F){
+	# Generate matrices
+	g1 <- generate.wishart(n = n*q, m*q, norm = T)
+	p  <- generate.Q.stan(n = n*q, k = k*q, random = T)
+	g2 <- h(p) %*% g1 %*% p
+	
+	# Spectral decomposition
+	eig1 <- eigen(x = g1, symmetric = T)
+	eig2 <- eigen(x = g2, symmetric = T)
+	vec1 <- t(p) %*% eig1$vector
+	if (norm){
+		vec1 <- normalize(vec1)	
+	}
+	vec2 <- eig2$vectors
+	
+	# Extract info
+	pV <- h(vec1) %*% vec2
+	pPPT <- p %*% h(p)
+	p.diag.max <- diag.max(abs(pV))
+	return(list(V = pV, 
+		    PPT = pPPT,
+		    eig.val1  = eig1$values, 
+		    eig.val2 = eig2$values , 
+		    diag = p.diag.max))
+}
+
+unif.stan <- function(n, k, q, norm = F){
+	# Generate matrices
+	g1 <- generate.wigner(n = n*q, norm = T)
+	p  <- generate.Q.stan(n = n*q, k = k*q, random = T)
+	g2 <- h(p) %*% g1 %*% p
+	
+	# Spectral decomposition
+	eig1 <- eigen(x = g1, symmetric = T)
+	eig2 <- eigen(x = g2, symmetric = T)
+	vec1 <- t(p) %*% eig1$vector
+	if (norm){
+		vec1 <- normalize(vec1)	
+	}
+	vec2 <- eig2$vectors
+	
+	# Extract info
+	pV <- h(vec1) %*% vec2
+	pPPT <- p %*% h(p)
+	p.diag.max <- diag.max(abs(pV))
+	return(list(V = pV, 
+		    PPT = pPPT,
+		    eig.val1  = eig1$values, 
+		    eig.val2 = eig2$values , 
+		    diag = p.diag.max))
+}
+
+bern.stan <- function(n, k, q, norm = F){
+	# Generate matrices
+	g1 <- generate.wigner.bernoulli(n = n*q, norm = T)
+	p  <- generate.Q.stan(n = n*q, k = k*q, random = T)
+	g2 <- h(p) %*% g1 %*% p
+	
+	# Spectral decomposition
+	eig1 <- eigen(x = g1, symmetric = T)
+	eig2 <- eigen(x = g2, symmetric = T)
+	vec1 <- t(p) %*% eig1$vector
+	if (norm){
+		vec1 <- normalize(vec1)	
+	}
+	vec2 <- eig2$vectors
+	
+	# Extract info
+	pV <- h(vec1) %*% vec2
+	pPPT <- p %*% h(p)
+	p.diag.max <- diag.max(abs(pV))
+	return(list(V = pV, 
+		    PPT = pPPT,
+		    eig.val1  = eig1$values, 
+		    eig.val2 = eig2$values , 
+		    diag = p.diag.max))
+}
+
+run.detail <- function(N, n, m, k, exper){
 	V <- vector("list", N)
 	eig.val1 <- vector("list", N)
 	eig.val2 <- vector("list", N)
@@ -32,7 +110,7 @@ run.detail <- function(N, n, k, exper){
 	PPT <- vector("list", N)
 	for (i in 1:N){
 		print(paste(i,'/',N))
-		tmp <- exper(n, k, 1)
+		tmp <- exper(n, m, k, 1)
 		V[[i]] <- tmp$V
 		PPT[[i]] <- tmp$PPT
 		eig.val1[[i]] <- tmp$eig.val1
@@ -52,7 +130,12 @@ run.detail <- function(N, n, k, exper){
 			eig.val2 = eig.val2, 
 			diag = diag,
 			k = k,
-			n = n))
+			n = n,
+			mean.V <- apply(abs(V), c(1,2), mean),
+			mean.eig.val1  = apply(eig.val1, 1, mean),
+			mean.eig.val2  = apply(eig.val2, 1, mean),
+			mean.diag  = apply(diag, 1, mean)
+				))
 }
 	
 	
