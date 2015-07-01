@@ -102,7 +102,7 @@ bern.stan <- function(n, k, q, norm = F){
 		    diag = p.diag.max))
 }
 
-run.detail <- function(N, n, m, k, exper){
+run.detail <- function(N, n, k, exper){
 	V <- vector("list", N)
 	eig.val1 <- vector("list", N)
 	eig.val2 <- vector("list", N)
@@ -110,7 +110,7 @@ run.detail <- function(N, n, m, k, exper){
 	PPT <- vector("list", N)
 	for (i in 1:N){
 		print(paste(i,'/',N))
-		tmp <- exper(n, m, k, 1)
+		tmp <- exper(n, k, 1)
 		V[[i]] <- tmp$V
 		PPT[[i]] <- tmp$PPT
 		eig.val1[[i]] <- tmp$eig.val1
@@ -118,20 +118,20 @@ run.detail <- function(N, n, m, k, exper){
 		diag[[i]] <- tmp$diag
 	}
 	
-	V <- abind(V,along = 3)
+	pV <- abind(V,along = 3)
 	PPT <- abind(PPT,along = 3)
 	eig.val1 <- abind(eig.val1, along = 2)
 	eig.val2 <- abind(eig.val2, along = 2)
 	diag <- abind(diag, along = 2)
 	
-	return(list(    V =  V, 
+	return(list(    V =  pV, 
 			PPT = PPT, 
 			eig.val1 = eig.val1, 
 			eig.val2 = eig.val2, 
 			diag = diag,
 			k = k,
 			n = n,
-			mean.V <- apply(abs(V), c(1,2), mean),
+			mean.V = apply(abs(pV), c(1,2), mean),
 			mean.eig.val1  = apply(eig.val1, 1, mean),
 			mean.eig.val2  = apply(eig.val2, 1, mean),
 			mean.diag  = apply(diag, 1, mean)
