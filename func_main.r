@@ -35,6 +35,7 @@ sample.semicircle <- function(nsamples = 1, eig = F){
 		# http://stats.stackexchange.com/questions/12843/generating-random-samples-from-a-custom-distribution
 		# sample independent random numbers from pdf: p(x) = (2/pi)*sqrt(1-x^2)
 		x <- runif(nsamples)
+		# CDF:
 		f <- function(x,u) (x*sqrt(1 - x^2) + asin(x) + pi/2 )/pi - u
 		my.uniroot <- function(x) uniroot(f, c(-1, 1), tol = 1e-4, u = x)$root;
 		r <- vapply(x, my.uniroot, numeric(1))
